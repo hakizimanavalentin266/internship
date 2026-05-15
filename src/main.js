@@ -1,4 +1,10 @@
-import { createApp } from 'vue'
-import App from './App.vue'
+import { createApp } from 'vue';
+import App from './App.vue';
+import store from './store'; // Imports the index.js from your store folder
 
-createApp(App).mount('#app')
+const app = createApp(App);
+
+// This is the line that fixes the error on your screen:
+app.use(store); 
+
+app.mount('#app');

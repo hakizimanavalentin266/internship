@@ -1,9 +1,13 @@
 <template>
   <div class="game-wrapper">
-    <!-- Score Display -->
-    <div class="score-board">Score: {{ score }}</div>
+    <!-- Score Board displaying real-time global states from Vuex -->
+    <div class="score-board">
+      <div>Score: {{ currentScore }}</div>
+      <div class="highscore-tag">High Score: {{ personalBest }}</div>
+      <div class="difficulty-tag">Level: {{ currentDifficulty }}</div>
+    </div>
 
-    <!-- Game Container -->
+    <!-- Game Container Layer -->
     <div class="game-container">
       <!-- Player Element -->
       <div 
@@ -19,7 +23,7 @@
         ref="obstacleRef"
       ></div>
 
-      <!-- Game Over Overlay -->
+      <!-- Game Over Overlay Screen -->
       <div v-if="gameOver" class="game-over-overlay">
         <h2>Game Over</h2>
         <button @click="resetGame">Restart Game</button>
@@ -30,11 +34,13 @@
 </template>
 
 <script>
+// IMPORT CONFIG: Pull map methods directly from your installed Vuex module
+import { mapGetters, mapActions } from 'vuex';
+
 export default {
   name: "JumpGame",
   data() {
     return {
-      score: 0,
       gameOver: false,
       isJumping: false,
       obstacleX: 600,
@@ -43,11 +49,15 @@ export default {
       bgMusic: null,
       isMusicPlaying: false,
       
-      // VUE CLI / WEBPACK FIX: Use require() with the @ alias to resolve paths accurately
+      // Path parameters optimized directly for Webpack module bundlers
       jumpSoundSrc: require('@/assets/sound/Jump.mp3'),
       pointSoundSrc: require('@/assets/sound/Point.mp3'),
       bgMusicSrc: require('@/assets/sound/background.mp3')
     };
+  },
+  computed: {
+    // GETTERS MAPPING: Binds your global variables straight into template text placeholders
+    ...mapGetters(['currentScore', 'currentDifficulty', 'personalBest'])
   },
   mounted() {
     window.addEventListener("keydown", this.handleKeyDown);
@@ -59,6 +69,9 @@ export default {
     this.stopMusic();
   },
   methods: {
+    // ACTIONS MAPPING: Inherits core data manipulation pipelines out of your store folder
+    ...mapActions(['addScore', 'changeDifficulty', 'resetGameStore']),
+
     startGame() {
       this.gameLoop();
     },
@@ -68,7 +81,6 @@ export default {
         
         if (this.gameOver) return;
 
-        // Start background music loop on the first user interaction
         if (!this.isMusicPlaying) {
           this.playMusic();
         }
@@ -119,11 +131,15 @@ export default {
       }
     },
     incrementScore() {
-      this.score += 1;
+      // Dispatches store action to calculate points centrally
+      this.addScore();
       this.playSound('score');
 
-      if (this.score % 4 === 0) {
-        this.speed += 1;
+      // Uses computed store outputs to scale game movement and advance levels
+      if (this.currentScore % 4 === 0) {
+        this.speed += 1.5;
+        const nextLevel = this.currentDifficulty + 1;
+        this.changeDifficulty(nextLevel);
       }
     },
     playSound(soundName) {
@@ -159,7 +175,8 @@ export default {
       }
     },
     resetGame() {
-      this.score = 0;
+      // Cleans store states synchronously back to initial settings
+      this.resetGameStore();
       this.gameOver = false;
       this.isJumping = false;
       this.obstacleX = 600;
@@ -181,9 +198,19 @@ export default {
 }
 
 .score-board {
+  display: flex;
+  gap: 25px;
   font-size: 24px;
   font-weight: bold;
   margin-bottom: 10px;
+}
+
+.highscore-tag {
+  color: #2ecc71;
+}
+
+.difficulty-tag {
+  color: #e67e22;
 }
 
 .game-container {
